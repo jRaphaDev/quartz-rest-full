@@ -1,7 +1,10 @@
 package br.com.rest;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -16,15 +19,16 @@ import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.quartz.impl.StdSchedulerFactory;
-import org.quartz.impl.matchers.GroupMatcher;
 
-import br.com.email.JavaSendMail;
+import br.com.email.SendMail;
 import br.com.rest.JobRest;
 
 public class DefaultJobRest implements JobRest {
-
+	
 	private Scheduler scheduler;
-		
+	Properties prop = new Properties();
+	InputStream input = null;
+	
 	@Override
 	public Response executeJob(int seconds) {
 		try {
@@ -38,9 +42,12 @@ public class DefaultJobRest implements JobRest {
 	}
 	
 	private void executeTrigger(JobKey jobKey, int seconds) throws Exception {
+
+		input = getClass().getClassLoader().getResourceAsStream("quartz.properties");
+		prop.load(input);
 		
-		
-		StringBuffer msg = new StringBuffer("Every move you make, "
+		StringBuffer msg = new StringBuffer(
+				  "Every move you make, "
         		+ "Every bond you break, "
         		+ "Every step you take, "
         		+ "I'll be watching you !!! ");
@@ -48,17 +55,20 @@ public class DefaultJobRest implements JobRest {
 		List<String> to = new ArrayList<>();
 		to.add("raphael.santos@techne.com.br");
 		to.add("leandro.chaves@techne.com.br");
-		System.out.println(to);
+		
+		String username = prop.getProperty("email.username");
+		String password = prop.getProperty("email.password");
+		System.out.println(username + " >>>> " + password);
 
-		//String username, String password, List<String> to, String title. String msg
-		JavaSendMail jse = new JavaSendMail("username@gmail.com", "password", to, "Title", msg.toString());
-		jse.execute();
+		//new SendMail(username, password, to, "Title", msg.toString());
+		new SendMail("seuemail@gmail.com", "password", to, "Title 2", msg.toString());
+
 		this.scheduler = new StdSchedulerFactory().getScheduler();
 		
-		JobDetail job = JobBuilder.newJob(JavaSendMail.class)
+		JobDetail job = JobBuilder.newJob(SendMail.class)
     			.withIdentity(jobKey)
     			.withDescription("description")
-    			.usingJobData("jobDo", "send email")
+    			.usingJobData("job do", "send email")
     			.build();
     	
     	TriggerKey triggerKey = TriggerKey.triggerKey("dummyTriggerName1", "my-jobs");
@@ -81,13 +91,12 @@ public class DefaultJobRest implements JobRest {
     	
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public Response getExcecutingJobs() throws Exception {
 		try {
 			List<JobExecutionContext> list = scheduler.getCurrentlyExecutingJobs(); 
 			
-			//loop all group
+			/*loop all group
 		    for (String groupName : scheduler.getJobGroupNames()) {
 
 		    	for (JobKey jobKey : scheduler.getJobKeys(GroupMatcher.jobGroupEquals(groupName))) {
@@ -101,7 +110,7 @@ public class DefaultJobRest implements JobRest {
 
 		    		System.out.println("[jobName] : " + jobName + " [groupName] : "	+ jobGroup + " - ");
 		    	}
-		    }
+		    }*/
 			return Response.ok().entity(list).build();
 		}catch (Exception e) {
 			e.printStackTrace();
