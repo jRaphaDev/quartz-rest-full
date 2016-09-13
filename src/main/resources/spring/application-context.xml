@@ -18,11 +18,12 @@
 	<import resource="classpath:META-INF/cxf/cxf-servlet.xml" />
 
 	<context:annotation-config />
-	<context:component-scan base-package="br.com.rest" />
-
+	
+	<context:component-scan base-package="br.com.techne.rest" />
+		
 	<tx:annotation-driven />
 
-	<jaxrs:server address="/" basePackages="br.com.rest">
+	<jaxrs:server address="/" basePackages="br.com.techne.rest">
 		<jaxrs:providers>
 			<bean class="org.codehaus.jackson.jaxrs.JacksonJsonProvider" />
 		</jaxrs:providers>
